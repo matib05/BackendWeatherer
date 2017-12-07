@@ -17,7 +17,7 @@ public class CityGetter {
         }
         String[] cont = content.split("\n");
         for (int i = 0 ; i < cont.length; i++) {
-            System.out.println(cont[i]);
+            System.out.println(i);
         }
     }
 }

@@ -21,8 +21,11 @@ public class Application implements CommandLineRunner {
 
     @Autowired
     JdbcTemplate jdbcTemplate;
+
     private static final Logger log  = LoggerFactory.getLogger(Application.class);
-    static String city = "Atlanta";
+
+    static int i = 74071;
+
     private static final String APPID = "31576d96eb3acb7333670187bc45f085";
 
     public static void main(String[] args) {
@@ -34,7 +37,7 @@ public class Application implements CommandLineRunner {
 
         log.info("Creating tables");
         jdbcTemplate.execute("DROP TABLE weather IF EXISTS");
-        jdbcTemplate.execute("CREATE TABLE weather(weatherData VARCHAR(700))");
+        jdbcTemplate.execute("CREATE TABLE weather(city VARCHAR(100), description VARCHAR(100), temp VARCHAR(100))");
         log.info("calling api");
         TimerTask timerTask = new TimerTask() {
             @Override
@@ -49,47 +52,43 @@ public class Application implements CommandLineRunner {
 
 
     public static String getCityName() {
-        log.info("here in getCityName");
-        String fileName = "C:\\Users\\matib05\\Desktop\\Coding\\BackendWeatherer\\src\\main\\java\\com\\incomm\\mahmad\\city_list.txt";
-        String content = null;
+        String fileName = "C:\\Users\\mahmad\\IdeaProjects\\BackendWeatherer\\src\\main\\java\\com\\incomm\\mahmad\\city_list.txt";
+        String document = null;
         try {
-            content = new String(Files.readAllBytes(Paths.get(fileName)));
+            document = new String(Files.readAllBytes(Paths.get(fileName)));
         } catch (IOException e) {
             e.printStackTrace();
         }
-        log.info("splitting content");
-        String[] cont = content.split("\n");
-        for (int i = 0 ; i < cont.length; i++) {
-            log.info(cont[i]);
-            if (cont[i].equalsIgnoreCase(city.toLowerCase())) {
-                log.info("cityName= " + cont[i]);
-                return cont[i];
-            }
+        String[] line = document.split("\n");
+        while (i > 73971) {
+            String[] elements = line[i].split("\t");
+            log.info("cityName= " + elements[1]);
+            System.out.println(i--);
+            return elements[1];
+
         }
         return "";
     }
 
-    public static void runTimerTask() {
+    public void runTimerTask() {
         RestTemplate restTemplate = new RestTemplate();
-        log.info("calling getCityName");
         String cityName = getCityName();
-        if (cityName =="") {
-            log.info("it was \"\"");
-            cityName = "Atlanta";
-        }
+        assert cityName != null;
         String url = "http://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + APPID;
         log.info(url);
         WeatherData weather = restTemplate.getForObject(url, WeatherData.class);
-        //addToDatabase(weather.getWeather().get(0).getDescription(), weather.getName().trim(), weather.getMain().getTemp());
-        System.out.println(weather.toString());
+        addToDatabase(weather.getWeather().get(0).getDescription(), weather.getName().trim(), weather.getMain().getTemp());
+        log.info(weather.toString());
     }
 
-    public static void addToDatabase(String description, String city, Double temp) {
+    public void addToDatabase(String description, String city, Double temp) {
         if (description == null || city == null) {
             System.out.println("Null");
             return;
         }
-        String weatherData = description + " " + city + " " + temp;
-        //System.out.println(jdbcTemplate.update("INSERT INTO weather(weatherData) VALUES (?)", weatherData));
+        String weatherData = city + " " + description + " " + temp;
+        log.info(weatherData);
+        System.out.println(jdbcTemplate.update("INSERT INTO weather(city, description, temp) VALUES (?, ?, ?)", city, description, temp));
+
     }
 }
