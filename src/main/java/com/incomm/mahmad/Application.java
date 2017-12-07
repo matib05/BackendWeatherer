@@ -20,7 +20,7 @@ import java.util.TimerTask;
 public class Application implements CommandLineRunner {
 
     @Autowired
-    static JdbcTemplate jdbcTemplate;
+    JdbcTemplate jdbcTemplate;
     private static final Logger log  = LoggerFactory.getLogger(Application.class);
     static String city = "Atlanta";
     private static final String APPID = "31576d96eb3acb7333670187bc45f085";
@@ -39,39 +39,48 @@ public class Application implements CommandLineRunner {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
+                log.info("run");
                 runTimerTask();
             }
         };
         Timer timer = new Timer();
-        timer.scheduleAtFixedRate(timerTask, 0, 5*1000);
+        timer.scheduleAtFixedRate(timerTask, 5*1000, 5*1000);
     }
 
 
-    public static String getCityId() {
-        String cityId = "";
-        String fileName = "city_list.txt";
+    public static String getCityName() {
+        log.info("here in getCityName");
+        String fileName = "C:\\Users\\matib05\\Desktop\\Coding\\BackendWeatherer\\src\\main\\java\\com\\incomm\\mahmad\\city_list.txt";
         String content = null;
         try {
             content = new String(Files.readAllBytes(Paths.get(fileName)));
         } catch (IOException e) {
             e.printStackTrace();
         }
-        assert content != null;
+        log.info("splitting content");
         String[] cont = content.split("\n");
         for (int i = 0 ; i < cont.length; i++) {
+            log.info(cont[i]);
             if (cont[i].equalsIgnoreCase(city.toLowerCase())) {
-                cityId= cont[i].split(",")[0];
-                log.debug("cityId= " + cityId);
+                log.info("cityName= " + cont[i]);
+                return cont[i];
             }
         }
-        return cityId.trim();
+        return "";
     }
 
     public static void runTimerTask() {
         RestTemplate restTemplate = new RestTemplate();
-        String url = "http://api.openweathermap.org/data/2.5/weather?id=" + getCityId() + "&appid=" + APPID;
+        log.info("calling getCityName");
+        String cityName = getCityName();
+        if (cityName =="") {
+            log.info("it was \"\"");
+            cityName = "Atlanta";
+        }
+        String url = "http://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + APPID;
+        log.info(url);
         WeatherData weather = restTemplate.getForObject(url, WeatherData.class);
-        addToDatabase(weather.getWeather().get(0).getDescription(), weather.getName().trim(), weather.getMain().getTemp());
+        //addToDatabase(weather.getWeather().get(0).getDescription(), weather.getName().trim(), weather.getMain().getTemp());
         System.out.println(weather.toString());
     }
 
@@ -81,6 +90,6 @@ public class Application implements CommandLineRunner {
             return;
         }
         String weatherData = description + " " + city + " " + temp;
-        System.out.println(jdbcTemplate.update("INSERT INTO weather(weatherData) VALUES (?)", weatherData));
+        //System.out.println(jdbcTemplate.update("INSERT INTO weather(weatherData) VALUES (?)", weatherData));
     }
 }
