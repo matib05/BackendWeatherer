@@ -37,4 +37,13 @@ public class WeatherResponse {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    @Override
+    public String toString() {
+        return "WeatherResponse{" +
+                "temp='" + temp + '\'' +
+                ", city='" + city + '\'' +
+                ", description='" + description + '\'' +
+                '}';
+    }
 }

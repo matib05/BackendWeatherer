@@ -38,7 +38,7 @@ public class Application implements CommandLineRunner {
         log.info("Creating tables");
         jdbcTemplate.execute("DROP TABLE weather IF EXISTS");
         jdbcTemplate.execute("CREATE TABLE weather(city VARCHAR(100), description VARCHAR(100), temp VARCHAR(100))");
-        log.info("calling api");
+        /*log.info("calling api");
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
@@ -48,9 +48,10 @@ public class Application implements CommandLineRunner {
         };
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(timerTask, 5*1000, 5*1000);
+        */
     }
 
-
+    /*
     public static String getCityName() {
         String fileName = "C:\\Users\\mahmad\\IdeaProjects\\BackendWeatherer\\src\\main\\java\\com\\incomm\\mahmad\\city_list.txt";
         String document = null;
@@ -83,12 +84,12 @@ public class Application implements CommandLineRunner {
 
     public void addToDatabase(String description, String city, Double temp) {
         if (description == null || city == null) {
-            System.out.println("Null");
+            System.out.println("DESCRIPTION OR CITY ARE NULL");
             return;
         }
         String weatherData = city + " " + description + " " + temp;
         log.info(weatherData);
         System.out.println(jdbcTemplate.update("INSERT INTO weather(city, description, temp) VALUES (?, ?, ?)", city, description, temp));
-
     }
+    */
 }

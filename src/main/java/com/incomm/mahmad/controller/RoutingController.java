@@ -1,6 +1,5 @@
 package com.incomm.mahmad.controller;
 
-import com.incomm.mahmad.model.request.Location;
 import com.incomm.mahmad.model.response.WeatherData;
 import com.incomm.mahmad.model.response.WeatherResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,29 +24,78 @@ public class RoutingController {
 
 
     @GetMapping(value = "/location")
-    public Location getLocation(@RequestParam(value = "lat")String lat, @RequestParam(value = "long")String lon) {
+    public String[] getLocation(@RequestParam(value = "lat")String lat, @RequestParam(value = "long")String lon) {
         RestTemplate restTemplate = new RestTemplate();
         String url = "http://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&appid=" + APPID;
         System.out.println(url);
         WeatherData weather = restTemplate.getForObject(url, WeatherData.class);
-        //addToDatabase(weather.getWeather().get(0).getDescription(), weather.getName().toString().trim(), weather.getMain().getTemp());
+        String[] response = new String[3];
+        response[0] = weather.getWeather().get(0).getDescription();
+        response[1] = weather.getName();
+        response[2] = weather.getMain().getTemp().toString();
+        addToDatabase(response[0], response[1], response[2]);
         System.out.println(weather.toString());
-        return null;
+        return response;
     }
 
-    /*
+
     @GetMapping(value = "/city")
-    public Location getCity(@RequestParam(value = "q")String city) {
+    public String[] getCityLocation(@RequestParam(value = "q")String city) {
+        String[] response = checkCache(city);
+        if (response == null) {
+            response = apiCall(city);
+        }
+        return response;
+    }
+
+    public void addToDatabase(String city, String description, String temp) {
+        System.out.println("IN ADDTODATABASE");
+        if (city == null || description == null ||  temp == null) {
+            System.out.println("ADDTODATABASE: either city, description, or temp is null");
+            return;
+        }
+        System.out.println("ADDTODATABASE: inserting city " + city
+                + ", description" + description + ", and temp" + temp + " into db");
+        jdbcTemplate.update("INSERT INTO weather(city, description, temp) VALUES (?, ?, ?)", city, description, temp);
+    }
+
+    public String[] checkCache(String city) {
+        System.out.println("CHECKCACHE CALL");
+        String sql = "SELECT * FROM weather WHERE city = ?";
+        List<WeatherResponse> data =  jdbcTemplate.query(sql, new Object[]{city}, new RowMapper<WeatherResponse>() {
+            @Override
+            public WeatherResponse mapRow(ResultSet rs, int i) throws SQLException {
+                System.out.println("CHECKCACHE CALL querying data with following query: " + sql);
+                WeatherResponse weatherResponse = new WeatherResponse();
+                weatherResponse.setCity(rs.getString("city"));
+                weatherResponse.setDescription(rs.getString("description"));
+                weatherResponse.setTemp(rs.getString("temp"));
+                System.out.println("CHECKCACHE CALL: " + weatherResponse.toString());
+                return weatherResponse;
+            }
+        });
+        if (data.isEmpty() || data == null || data.size() ==  0) {
+            System.out.println("CHECKCACHE: data is empty");
+            return null;
+        }
+        System.out.println("CHECKCACHE: data is NOT empty");
+        return new String[] {data.get(0).getDescription(), data.get(0).getCity(), data.get(0).getTemp()};
+    }
+
+    public String[] apiCall(String city) {
+        System.out.println("IN APICALL");
+        String[] response = new String[3];
         RestTemplate restTemplate = new RestTemplate();
         String url = "http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + APPID;
-        System.out.println(url);
+        System.out.println("APICALL: making restTemplate call with url " + url);
         WeatherData weather = restTemplate.getForObject(url, WeatherData.class);
-        //addToDatabase(weather.getWeather().get(0).getDescription(), weather.getName().toString().trim(), weather.getMain().getTemp());
-        System.out.println(weather.toString());
-        return null;
+        response[0] = weather.getWeather().get(0).getDescription();
+        response[1] = weather.getName();
+        response[2] = weather.getMain().getTemp().toString();
+        addToDatabase(response[0], response[1], response[2]);
+        return response;
     }
-    */
-
+    /*
     @GetMapping(value = "/city")
     public String[] getCity(@RequestParam(value = "q")String city) {
         String sql = "SELECT * FROM weather WHERE city = ?";
@@ -71,4 +119,5 @@ public class RoutingController {
         System.out.println(response[0] + " "+ response[1] + " " + response[2]);
         return response;
     }
+    */
 }
