@@ -41,35 +41,45 @@ public class RoutingController {
 
     @GetMapping(value = "/city")
     public String[] getCityLocation(@RequestParam(value = "q")String city) {
+        city = city.toLowerCase();
+        System.out.println("GETCITYLOCATION method: calling checkCache for city " + city);
         String[] response = checkCache(city);
         if (response == null) {
+            System.out.println("GETCITYLOCATION method: response is null");
             response = apiCall(city);
         }
         return response;
     }
 
     public void addToDatabase(String city, String description, String temp) {
+        city = city.toLowerCase();
+        description = description.toLowerCase();
+        temp = temp.toLowerCase();
         System.out.println("IN ADDTODATABASE");
         if (city == null || description == null ||  temp == null) {
             System.out.println("ADDTODATABASE: either city, description, or temp is null");
             return;
         }
         System.out.println("ADDTODATABASE: inserting city " + city
-                + ", description" + description + ", and temp" + temp + " into db");
+                + ", description " + description + ", and temp " + temp + " into db");
         jdbcTemplate.update("INSERT INTO weather(city, description, temp) VALUES (?, ?, ?)", city, description, temp);
+        if (city.equalsIgnoreCase(checkCache(city)[0])) {
+            System.out.println("ADDTODATABASE: IT EXISTSSSS!!!!!!!!!!!!!!!");
+        }
     }
 
     public String[] checkCache(String city) {
+        city = city.toLowerCase();
         System.out.println("CHECKCACHE CALL");
-        String sql = "SELECT * FROM weather WHERE city = ?";
-        List<WeatherResponse> data =  jdbcTemplate.query(sql, new Object[]{city}, new RowMapper<WeatherResponse>() {
+        String sql = "SELECT * FROM weather WHERE city=\'" + city + "\'";
+        List<WeatherResponse> data =  jdbcTemplate.query(sql, new RowMapper<WeatherResponse>() {
             @Override
             public WeatherResponse mapRow(ResultSet rs, int i) throws SQLException {
                 System.out.println("CHECKCACHE CALL querying data with following query: " + sql);
                 WeatherResponse weatherResponse = new WeatherResponse();
-                weatherResponse.setCity(rs.getString("city"));
-                weatherResponse.setDescription(rs.getString("description"));
-                weatherResponse.setTemp(rs.getString("temp"));
+                weatherResponse.setCity(rs.getString("city").toLowerCase());
+                weatherResponse.setDescription(rs.getString("description").toLowerCase());
+                weatherResponse.setTemp(rs.getString("temp").toLowerCase());
                 System.out.println("CHECKCACHE CALL: " + weatherResponse.toString());
                 return weatherResponse;
             }
@@ -79,19 +89,21 @@ public class RoutingController {
             return null;
         }
         System.out.println("CHECKCACHE: data is NOT empty");
-        return new String[] {data.get(0).getDescription(), data.get(0).getCity(), data.get(0).getTemp()};
+        return new String[] {data.get(0).getDescription().toLowerCase(), data.get(0).getCity().toLowerCase(),
+                data.get(0).getTemp().toLowerCase()};
     }
 
     public String[] apiCall(String city) {
+        city = city.toLowerCase();
         System.out.println("IN APICALL");
         String[] response = new String[3];
         RestTemplate restTemplate = new RestTemplate();
         String url = "http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + APPID;
         System.out.println("APICALL: making restTemplate call with url " + url);
         WeatherData weather = restTemplate.getForObject(url, WeatherData.class);
-        response[0] = weather.getWeather().get(0).getDescription();
-        response[1] = weather.getName();
-        response[2] = weather.getMain().getTemp().toString();
+        response[0] = weather.getName().toLowerCase();
+        response[1] = weather.getWeather().get(0).getDescription().toLowerCase();
+        response[2] = weather.getMain().getTemp().toString().toLowerCase();
         addToDatabase(response[0], response[1], response[2]);
         return response;
     }
